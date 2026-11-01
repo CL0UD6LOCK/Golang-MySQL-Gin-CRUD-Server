@@ -73,8 +73,21 @@ func (s *MySQLStore) Create(st models.Student) (models.Student, error) {
 }
 
 func (s *MySQLStore) Update(id int, name *string, age *int) (models.Student, error) {
-	err := s.db.QueryRow("UPDATE students SET name = ?,age=? WHERE id = ?", name, age, id)
-
+	stu, err := s.Get(id)
+	if err != nil {
+		return models.Student{}, err
+	}
+	if name != nil {
+		stu.Name = *name
+	}
+	if age != nil {
+		stu.Age = *age
+	}
+	_, err = s.db.Exec("UPDATE students SET name = ?,age=? WHERE id=?", stu.Name, stu.Age, id)
+	if err != nil {
+		return models.Student{}, err
+	}
+	return stu, nil
 }
 
 func (s *MySQLStore) Delete(id int) error {
