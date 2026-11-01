@@ -71,3 +71,23 @@ func (s *MySQLStore) Create(st models.Student) (models.Student, error) {
 	st.ID = int(id)
 	return st, nil
 }
+
+func (s *MySQLStore) Update(id int, name *string, age *int) (models.Student, error) {
+	err := s.db.QueryRow("UPDATE students SET name = ?,age=? WHERE id = ?", name, age, id)
+
+}
+
+func (s *MySQLStore) Delete(id int) error {
+	res, err := s.db.Exec("DELETE FROM students WHERE id=?", id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
