@@ -1,20 +1,39 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"studentmanager/handlers"
 	"studentmanager/storage"
 
+	"github.com/joho/godotenv"
+
+	"log"
+	"os"
+
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql" //只注册驱动
 )
 
 func main() {
-	fs, err := storage.NewFileStore()
-	if err != nil {
-		fmt.Println(err)
-		return
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, using system environment")
 	}
-	h := &handlers.StudentHandler{Store: fs}
+	dsn := os.Getenv("MYSQL_DSN")
+	if dsn == "" {
+		log.Fatal("MYSQL_DSN environment variable is not set")
+	}
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
+
+	h := &handlers.StudentHandler{Store: storage.NewMySQLStore(db)}
 	router := gin.Default()
 	router.GET("/students", h.ListStudents)
 	router.GET("/students/:id", h.GetStudent)
